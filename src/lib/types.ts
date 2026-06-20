@@ -99,4 +99,73 @@ export interface Investment {
   user_id?: string;
 }
 
+// ============================================
+// PayLater
+// ============================================
+
+/** Penyedia paylater (mis. Shopee PayLater, Kredivo) + limit kredit. */
+export interface PaylaterAccount {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  credit_limit: number;
+  created_at: string;
+  updated_at: string;
+  user_id?: string;
+}
+
+export type PaylaterAccountFormData = {
+  name: string;
+  icon: string;
+  color: string;
+  credit_limit: number;
+};
+
+/** Satu cicilan bulanan dari sebuah pembelian paylater. */
+export interface PaylaterInstallment {
+  id: string;
+  purchase_id: string;
+  installment_no: number;
+  amount: number;
+  due_date: string;
+  paid: boolean;
+  paid_date: string | null;
+  /** Dompet yang dipakai melunasi (diisi saat paid). */
+  wallet_id: string | null;
+  /** Transaksi expense yang dibuat saat cicilan dilunasi. */
+  transaction_id: string | null;
+  created_at: string;
+  updated_at: string;
+  user_id?: string;
+}
+
+/** Pembelian yang dibayar via paylater, dipecah jadi `tenor` cicilan. */
+export interface PaylaterPurchase {
+  id: string;
+  account_id: string;
+  description: string;
+  amount: number;
+  tenor: number;
+  purchase_date: string;
+  category_id: string | null;
+  created_at: string;
+  updated_at: string;
+  user_id?: string;
+}
+
+export interface PaylaterPurchaseWithRelations extends PaylaterPurchase {
+  category: Category | null;
+  installments: PaylaterInstallment[];
+}
+
+export type PaylaterPurchaseFormData = {
+  account_id: string;
+  description: string;
+  amount: number;
+  tenor: number;
+  purchase_date: string;
+  category_id: string | null;
+};
+
 

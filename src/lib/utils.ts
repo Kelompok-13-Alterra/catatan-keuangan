@@ -1,4 +1,4 @@
-import { format, parseISO } from "date-fns";
+import { format, parseISO, addMonths, setDate, lastDayOfMonth } from "date-fns";
 import { id } from "date-fns/locale";
 
 export function formatRupiah(amount: number): string {
@@ -118,3 +118,38 @@ export function normalizeWalletColor(color: string): string {
 export const WALLET_CARD_GRADIENT =
   "linear-gradient(160deg, #7a72f7 0%, #4f46e5 42%, #392ec9 100%)";
 export const WALLET_CARD_SHADOW = "0 14px 36px rgba(63, 53, 213, 0.35)";
+
+// ============================================
+// PayLater — jatuh tempo otomatis
+// ============================================
+
+/** Set tanggal pada bulan `d`, di-clamp ke hari terakhir bila melebihi. */
+function withDayClamped(d: Date, day: number): Date {
+  const last = lastDayOfMonth(d).getDate();
+  return setDate(d, Math.min(day, last));
+}
+
+/**
+ * Hitung tanggal jatuh tempo tiap cicilan ("yyyy-MM-dd") secara otomatis
+ * dari tanggal pembelian, mengikuti pola SPayLater. Hari jatuh tempo =
+ * tanggal beli + 10 (basis 30 hari), dan SELALU jatuh di bulan berikutnya:
+ *   beli tgl 1  → tempo tgl 11 (bulan depan)
+ *   beli tgl 15 → tempo tgl 25 (bulan depan)
+ *   beli tgl 21 → tempo tgl 1  (bulan depan)
+ *   beli tgl 25 → tempo tgl 5  (bulan depan)
+ * Cicilan ke-n menambah (n-1) bulan dari jatuh tempo pertama.
+ */
+export function computeInstallmentDueDates(
+  purchaseDate: string,
+  tenor: number
+): string[] {
+  const p = parseISO(purchaseDate);
+  const raw = p.getDate() + 10;
+  const dueDay = raw > 30 ? raw - 30 : raw;
+  // Jatuh tempo selalu bulan berikutnya dari tanggal pembelian.
+  const firstDue = withDayClamped(addMonths(p, 1), dueDay);
+
+  return Array.from({ length: tenor }, (_, i) =>
+    format(addMonths(firstDue, i), "yyyy-MM-dd")
+  );
+}
